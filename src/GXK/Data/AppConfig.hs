@@ -1,4 +1,4 @@
-module Vish.Application.Data.AppConfig where
+module GXK.Data.AppConfig where
 
 import System.FilePath
 

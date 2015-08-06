@@ -1,13 +1,13 @@
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Vish.Application.Internal.Backend.GLFW
+module GXK.Internal.Backend.GLFW
   (GLFWState)
 where
 
-import Vish.Application.Internal.Backend.Types
-import Vish.Application.Data.Input (Key (..), MouseButton (..))
-import qualified Vish.Application.Data.Input as I
-import Vish.Application.Data.Window
+import GXK.Internal.Backend.Types
+import GXK.Data.Input (Key (..), MouseButton (..))
+import qualified GXK.Data.Input as I
+import GXK.Data.Window
 
 import Control.Concurrent
 import Control.Lens

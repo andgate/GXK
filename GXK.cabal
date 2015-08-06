@@ -5,7 +5,7 @@ name:                GXK
 version:             0.1.0.0
 -- synopsis:
 -- description:
-license:             GPL2
+license:             GPL-2
 license-file:        LICENSE
 author:              Gabriel Anderson
 maintainer:          ganderson@go.shoreline.edu
@@ -13,7 +13,7 @@ copyright:           Copyight (C) 2015 Gabriel Anderson
 category:            game
 build-type:          Simple
 -- extra-source-files:
-cabal-version:       >=1.22.6.0
+cabal-version:       >=1.22.4.0
 
 data-dir:            data
 
@@ -100,9 +100,9 @@ library
   If flag(GLUT)
     Build-Depends:    GLUT (==2.7.*)
     CPP-Options:      -DWITHGLUT
-    Other-modules:    Vish.Application.Internal.Backend.GLUT
+    Other-modules:    GXK.Internal.Backend.GLUT
 
   If flag(GLFW)
     Build-Depends:    GLFW-b >= 1.4 && < 2
     CPP-Options:      -DWITHGLFW
-    Other-modules:    Vish.Application.Internal.Backend.GLFW
+    Other-modules:    GXK.Internal.Backend.GLFW

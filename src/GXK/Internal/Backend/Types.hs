@@ -1,14 +1,14 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Vish.Application.Internal.Backend.Types
-  ( module Vish.Application.Internal.Backend.Types
-  , module Vish.Application.Data.Window
+module GXK.Internal.Backend.Types
+  ( module GXK.Internal.Backend.Types
+  , module GXK.Data.Window
   )
 where
 
 
-import Vish.Application.Data.Window
-import qualified Vish.Application.Data.Input as I
+import GXK.Data.Window
+import qualified GXK.Data.Input as I
 
 import Control.Lens
 import Data.IORef

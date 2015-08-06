@@ -1,1 +1,1 @@
-module Vish.Application.Data.Screen where
+module GXK.Data.Screen where

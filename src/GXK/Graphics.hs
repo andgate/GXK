@@ -1,4 +1,4 @@
-module Vish.Application.Graphics where
+module GXK.Graphics where
 
 import Graphics.Rendering.OpenGL (get, ($=))
 import qualified Graphics.Rendering.OpenGL as GL

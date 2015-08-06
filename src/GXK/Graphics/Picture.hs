@@ -1,9 +1,9 @@
-module Vish.Graphics.Picture where
+module GXK.Graphics.Picture where
 
-import Vish.Graphics.Data.Picture
-import Vish.Graphics.Texture
-import Vish.Graphics.Data.Texture
-import Vish.Graphics.Util
+import GXK.Graphics.Data.Picture
+import GXK.Graphics.Texture
+import GXK.Graphics.Data.Texture
+import GXK.Graphics.Util
 
 import qualified Data.HashTable.IO as H
 

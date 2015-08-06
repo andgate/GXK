@@ -1,5 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
-module Vish.Application.Data.IORef.Lens where
+module GXK.Data.IORef.Lens where
 
 import Control.Lens
 import Control.Monad

@@ -1,23 +1,23 @@
-module Vish.Application.Internal.App where
+module GXK.Internal.App where
 
-import           Vish.Application.AppConfig
-import           Vish.Application.Data.App
-import           Vish.Application.Data.Input
-import           Vish.Application.Data.Window
-import           Vish.Application.Graphics
-import           Vish.Application.Internal.Backend
-import           Vish.Application.Internal.Input
-import           Vish.Application.Internal.Window
-import           Vish.Graphics.Picture
+import           GXK.AppConfig
+import           GXK.Data.App
+import           GXK.Data.Input
+import           GXK.Data.Window
+import           GXK.Graphics
+import           GXK.Graphics.Picture
+import           GXK.Internal.Backend
+import           GXK.Internal.Input
+import           GXK.Internal.Window
 
 import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.IORef
+import           GXK.Data.IORef.Lens
 import           Data.Maybe                        (fromMaybe)
 import           Data.Yaml
 import qualified System.Mem                        as System
-import           Vish.Application.Data.IORef.Lens
 
 playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
 playWithBackend backend world = do

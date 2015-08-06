@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Vish.Application.Data.Input
+module GXK.Data.Input
 where
 
 import GHC.Generics (Generic)

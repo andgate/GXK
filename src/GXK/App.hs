@@ -1,13 +1,13 @@
-module Vish.Application.App where
+module GXK.App where
 
-import           Vish.Application.Data.App
-import           Vish.Application.Internal.App
-import           Vish.Application.Internal.Backend
+import GXK.Data.App
+import GXK.Internal.App
+import GXK.Internal.Backend
 
-import           Control.Concurrent
-import           Control.Lens
-import           Data.IORef
-import           Vish.Application.Data.IORef.Lens
+import Control.Concurrent
+import Control.Lens
+import Data.IORef
+import GXK.Data.IORef.Lens
 
 
 play :: AppListener w => w -> IO ()

@@ -1,7 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Vish.Application.Internal.Data.Input where
+module GXK.Internal.Data.Input where
 
-import Vish.Application.Data.Input
+import GXK.Data.Input
 
 import Control.Lens
 import qualified Data.HashTable.IO as H

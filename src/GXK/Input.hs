@@ -1,18 +1,18 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Vish.Application.Input
-  ( module Vish.Application.Input
-  , module Vish.Application.Data.Input
+module GXK.Input
+  ( module GXK.Input
+  , module GXK.Data.Input
   )
 where
 
-import Vish.Application.Data.App
-import Vish.Application.Data.Input
+import GXK.Data.App
+import GXK.Data.Input
 
-import Vish.Application.Internal.Data.Input
+import GXK.Internal.Data.Input
 
 import Control.Lens
 import Data.IORef
-import Vish.Application.Data.IORef.Lens
+import GXK.Data.IORef.Lens
 
 registerInputListener :: InputListener l => AppRef w -> l -> IO ()
 registerInputListener appRef listener = do

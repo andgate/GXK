@@ -1,4 +1,4 @@
-module Vish.Graphics.Data.Picture where
+module GXK.Graphics.Data.Picture where
 
 import Data.Monoid
 

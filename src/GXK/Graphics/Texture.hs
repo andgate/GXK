@@ -1,7 +1,7 @@
-module Vish.Graphics.Texture where
+module GXK.Graphics.Texture where
 
-import Vish.Graphics.Util
-import Vish.Graphics.Data.Texture
+import GXK.Graphics.Util
+import GXK.Graphics.Data.Texture
 
 import Control.Monad
 import qualified Codec.Picture as JP

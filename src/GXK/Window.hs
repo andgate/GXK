@@ -1,4 +1,4 @@
-module Vish.Application.Window
+module GXK.Window
   ( module GXK.Window
   , module GXK.Data.Window
   )

@@ -1,15 +1,15 @@
 {-# LANGUAGE Rank2Types #-}
-module Vish.Application.Data.App where
+module GXK.Data.App where
 
 import Control.Lens
 import Data.IORef
 
-import Vish.Application.Internal.Data.Input (mkInput, Input)
-import Vish.Application.Data.Window
+import GXK.Internal.Data.Input (mkInput, Input)
+import GXK.Data.Window
 
-import Vish.Graphics.Data.Picture
-import Vish.Graphics.Data.Texture
-import Vish.Graphics.Texture
+import GXK.Graphics.Data.Picture
+import GXK.Graphics.Data.Texture
+import GXK.Graphics.Texture
 
 type AppRef w = IORef (App w)
 

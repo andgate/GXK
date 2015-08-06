@@ -1,4 +1,4 @@
-module Vish.Application.Data.Window where
+module GXK.Data.Window where
 
 import Control.Lens
 

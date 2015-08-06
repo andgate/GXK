@@ -1,20 +1,20 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Vish.Application.Internal.Input
-  ( module Vish.Application.Internal.Input
-  , module Vish.Application.Internal.Data.Input
+module GXK.Internal.Input
+  ( module GXK.Internal.Input
+  , module GXK.Internal.Data.Input
   )
 where
 
-import Vish.Application.Data.App
-import Vish.Application.Data.Input
-import Vish.Application.Internal.Data.Input
-import qualified Vish.Application.Internal.Backend as B
+import GXK.Data.App
+import GXK.Data.Input
+import GXK.Internal.Data.Input
+import qualified GXK.Internal.Backend as B
 
 import Control.Arrow
 import Control.Lens
 import Control.Monad
 import Data.IORef
-import Vish.Application.Data.IORef.Lens
+import GXK.Data.IORef.Lens
 import Data.Hashable
 import qualified Data.HashTable.IO as H
 

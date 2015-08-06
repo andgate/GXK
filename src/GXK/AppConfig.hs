@@ -1,12 +1,12 @@
-module Vish.Application.AppConfig
-  ( module Vish.Application.AppConfig
-  , module Vish.Application.Data.AppConfig
+module GXK.AppConfig
+  ( module GXK.AppConfig
+  , module GXK.Data.AppConfig
   )
 where
 
-import Vish.Application.Data.AppConfig
-import Vish.Application.Data.App
-import Vish.Application.Data.Window
+import GXK.Data.AppConfig
+import GXK.Data.App
+import GXK.Data.Window
 
 import Data.Yaml
 

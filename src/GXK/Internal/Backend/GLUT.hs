@@ -1,11 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Vish.Application.Internal.Backend.GLUT
+module GXK.Internal.Backend.GLUT
   (GLUTState)
 where
 
-import Vish.Application.Internal.Backend.Types
-import Vish.Application.Data.Input (Key (..), MouseButton (..))
-import qualified Vish.Application.Data.Input as I
+import GXK.Internal.Backend.Types
+import GXK.Data.Input (Key (..), MouseButton (..))
+import qualified GXK.Data.Input as I
 
 import Control.Concurrent
 import Control.Lens
@@ -13,7 +13,7 @@ import Control.Monad
 import Data.Bifunctor
 
 import Data.IORef
-import Vish.Application.Data.IORef.Lens
+import GXK.Data.IORef.Lens
 
 import Graphics.UI.GLUT                    (get,($=))
 import qualified Graphics.UI.GLUT          as GLUT
