@@ -4,8 +4,6 @@ import           GXK.AppConfig
 import           GXK.Data.App
 import           GXK.Data.Input
 import           GXK.Data.Window
-import           GXK.Graphics
-import           GXK.Graphics.Picture
 import           GXK.Internal.Backend
 import           GXK.Internal.Input
 import           GXK.Internal.Window
@@ -29,6 +27,9 @@ playWithBackend backend world = do
   let win = appConfigToWindow appConfig
   appRef & appWindow @~ win
 
+  let deltaTime = fromIntegral (appConfigMaxFPS appConfig) ** (-1)
+  appRef & appDeltaTime @~ deltaTime
+
   let callbacks =
         Callbacks
         { displayCallback     = displayUpdate appRef
@@ -49,13 +50,7 @@ displayUpdate appRef backendRef = do
   updateInput appRef backendRef
   appUpdate appRef
 
-  pic <- appDraw appRef
-  texCache <- appRef ^@ appGfx.gfxTexCache
-  winSize <- appRef ^@ appWindow.windowSize
-
-  renderStart
-  displayPicture texCache pic winSize
-  renderEnd
+  appDraw appRef
 
   appPostUpdate appRef
 
@@ -71,8 +66,8 @@ handleAppStatus appRef backendRef = do
     AppQuit -> exitBackend backendRef
 
 resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
-resizeWindow app _ =
-  appResize app
+resizeWindow appRef _ w h =
+  appResize appRef (w,h)
 
 pauseApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 pauseApplication app _ =

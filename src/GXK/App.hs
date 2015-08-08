@@ -20,3 +20,7 @@ quitApp appRef =
 appDelay :: Double -> IO ()
 appDelay s = threadDelay ms
   where ms = round $ s * 1000000
+
+getDeltaTime :: AppRef a -> IO Double
+getDeltaTime appRef =
+  appRef ^@ appDeltaTime

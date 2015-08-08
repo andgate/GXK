@@ -32,12 +32,9 @@ Flag GLFW
 library
   default-language:   Haskell2010
 
-  build-depends:      attoparsec >= 0.1 && < 1
-                      , base < 5 && >= 4
+  build-depends:      base < 5 && >= 4
                       , containers >= 0.5 && < 1
-                      , directory >= 1.2 && < 1.3
                       , filepath >= 1.4 && < 1.5
-                      , free >= 4 && < 5
                       , hashable >= 1.2.3.3 && < 2
                       , hashtables >= 1.1 && < 2
                       , JuicyPixels >= 3 && < 4
@@ -45,7 +42,6 @@ library
                       , lens >= 4.0 && < 5
                       , OpenGL ==2.12.*
                       , pretty >= 1.1 && < 1.2
-                      , regex-tdfa >= 1.2 && < 2
                       , safe >= 0.3 && < 0.4
                       , text >= 1.2 && < 1.3
                       , transformers >= 0.4 && < 0.5
@@ -75,16 +71,10 @@ library
   exposed-modules:    GXK.Data.App
                       GXK.App
                       GXK.AppConfig
-                      GXK.Graphics
                       GXK.Data.Window
                       GXK.Window
                       GXK.Data.Input
                       GXK.Input
-                      GXK.Graphics.Picture
-                      GXK.Graphics.Data.Picture
-                      GXK.Graphics.Texture
-                      GXK.Graphics.Data.Texture
-                      GXK.Graphics.Util
 
                       GXK.Data.IORef.Lens
 

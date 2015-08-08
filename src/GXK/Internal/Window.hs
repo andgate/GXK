@@ -2,7 +2,6 @@ module GXK.Internal.Window where
 
 import GXK.Data.App
 import GXK.Internal.Backend.Types
-import GXK.Graphics
 
 import Control.Monad
 import Data.IORef
@@ -24,7 +23,6 @@ createWindow appRef backendRef callbacks = do
 
   when debug . putStrLn $ "* entering mainloop.."
 
-  initGraphics
   appCreate appRef
   runMainLoop backendRef
 

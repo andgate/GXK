@@ -7,10 +7,6 @@ import Data.IORef
 import GXK.Internal.Data.Input (mkInput, Input)
 import GXK.Data.Window
 
-import GXK.Graphics.Data.Picture
-import GXK.Graphics.Data.Texture
-import GXK.Graphics.Texture
-
 type AppRef w = IORef (App w)
 
 getApp :: AppListener w => AppRef w -> IO (App w)
@@ -20,14 +16,14 @@ class AppListener w where
   appCreate :: AppRef w -> IO ()
   appCreate _ = return ()
 
-  appResize :: AppRef w -> Int -> Int -> IO ()
-  appResize _ _ _ = return ()
+  appResize :: AppRef w -> (Int, Int) -> IO ()
+  appResize _ winSize = return ()
 
   appUpdate :: AppRef w -> IO ()
   appUpdate _ = return ()
 
-  appDraw :: AppRef w -> IO Picture
-  appDraw _ = return blank
+  appDraw :: AppRef w -> IO ()
+  appDraw _ = return ()
 
   appPostUpdate :: AppRef w -> IO ()
   appPostUpdate _ = return ()
@@ -42,32 +38,29 @@ class AppListener w where
   appDispose _ = return ()
 
 data App w = App
-  { _appGfx :: Gfx
-  , _appInput :: Input
+  { _appInput :: Input
   , _appWindow :: Window
   , _appWorld :: w
   , _appStatus :: AppStatus
+  , _appDeltaTime :: Double
   }
 
 data AppStatus = AppPlay | AppQuit
 
-data Gfx = Gfx
-  { _gfxTexCache :: TexCache
-  }
-
 makeLenses ''App
-makeLenses ''Gfx
 
 mkApp :: AppListener w => w -> IO (App w)
 mkApp world = do
-  gfx       <- mkGfx
   input     <- mkInput
   let win = windowDefault
       status = AppPlay
+      deltaTime = 0
 
-  return $ App gfx input win world status
-
-mkGfx :: IO Gfx
-mkGfx = do
-  texCache <- mkTexCache
-  return $ Gfx texCache
+  return
+    App
+    { _appInput = input
+    , _appWindow = win
+    , _appWorld = world
+    , _appStatus = status
+    , _appDeltaTime = deltaTime
+    }
