@@ -5,7 +5,7 @@ import Control.Lens
 import Control.Monad
 import Data.IORef
 
-infixr 4 @~, @%~
+infixr 4 @~, @%~, @%=
 infixl 8 ^@
 
 
@@ -23,3 +23,10 @@ infixl 8 ^@
 (@%~) l f r =
   modifyIORef' r $ l %~ f
 {-# INLINE (@%~) #-}
+
+(@%=) :: Lens s s a a -> (a -> IO a) -> IORef s -> IO ()
+(@%=) l f r = do
+  a  <- r ^@ l
+  a' <- f a
+  r & l @~ a'
+{-# INLINE (@%=) #-}

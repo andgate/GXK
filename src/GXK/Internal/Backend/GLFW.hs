@@ -16,7 +16,7 @@ import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.IORef
-import Vish.Application.Data.IORef.Lens
+import GXK.Data.IORef.Lens
 import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes, fromMaybe)
@@ -109,7 +109,7 @@ openWindowGLFW ref win = do
   --GLFW.windowHint $ GLFW.WindowHint'OpenGLForwardCompat False
   --GLFW.windowHint $ GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core
 
-  GLFW.windowHint $ GLFW.WindowHint'Resizable False
+  --GLFW.windowHint $ GLFW.WindowHint'Resizable False
 
   let (sizeX, sizeY) = win^.windowSize
   maybeMonitor <-
