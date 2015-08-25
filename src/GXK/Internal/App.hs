@@ -15,6 +15,7 @@ import           Data.IORef
 import           GXK.Data.IORef.Lens
 import           Data.Maybe                        (fromMaybe)
 import           Data.Yaml
+import           Linear
 import qualified System.Mem                        as System
 
 playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
@@ -65,9 +66,13 @@ handleAppStatus appRef backendRef = do
     AppPlay -> return ()
     AppQuit -> exitBackend backendRef
 
-resizeWindow :: (AppListener w, Backend b) => AppRef w -> IORef b -> Int -> Int -> IO ()
-resizeWindow appRef _ w h =
-  appResize appRef (w,h)
+resizeWindow :: (AppListener w, Backend b)
+             => AppRef w
+             -> IORef b
+             -> V2 Int   -- ^ New size of the window
+             -> IO ()
+resizeWindow appRef _ wS =
+  appResize appRef wS
 
 pauseApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
 pauseApplication app _ =

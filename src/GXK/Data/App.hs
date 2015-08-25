@@ -3,6 +3,7 @@ module GXK.Data.App where
 
 import Control.Lens
 import Data.IORef
+import Linear
 
 import GXK.Internal.Data.Input (mkInput, Input)
 import GXK.Data.Window
@@ -16,7 +17,7 @@ class AppListener w where
   appCreate :: AppRef w -> IO ()
   appCreate _ = return ()
 
-  appResize :: AppRef w -> (Int, Int) -> IO ()
+  appResize :: AppRef w -> V2 Int -> IO ()
   appResize _ winSize = return ()
 
   appUpdate :: AppRef w -> IO ()

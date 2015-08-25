@@ -4,6 +4,7 @@ where
 
 import GHC.Generics (Generic)
 import Data.Hashable
+import Linear
 
 class InputListener a where
   keyReleased :: a -> Key -> IO ()
@@ -18,26 +19,46 @@ class InputListener a where
   keyTyped :: a -> Char -> IO ()
   keyTyped _ _ = return ()
 
-  mousePositioned :: a -> (Double, Double) -> IO ()
-  mousePositioned _ (posX, posY) = return ()
+  mousePositioned :: a          -- ^ Input listener's data
+                  -> V2 Double  -- ^ Current position of the mouse cursor
+                  -> IO ()
+  mousePositioned _ _ = return ()
 
-  mouseMoved :: a -> (Double, Double) -> IO ()
-  mouseMoved _ (velX, velY) = return ()
+  mouseMoved :: a          -- ^ Input listener's data
+             -> V2 Double  -- ^ Velocity of the mouse cursor
+             -> IO ()
+  mouseMoved _ _ = return ()
 
-  mouseReleased :: a -> MouseButton -> (Double, Double) ->  IO ()
-  mouseReleased _ _ (posX, posY) = return ()
+  mouseReleased :: a           -- ^ Input listener's data
+                -> MouseButton -- ^ Mouse button released
+                -> V2 Double   -- ^ Position of mouse cursor when released
+                -> IO ()
+  mouseReleased _ _ _ = return ()
 
-  mouseClicked :: a -> MouseButton -> (Double, Double) -> IO ()
-  mouseClicked _ _ (posX, posY) = return ()
+  mouseClicked :: a
+               -> MouseButton
+               -> V2 Double   -- ^ Position of mouse button when clicked
+               -> IO ()
+  mouseClicked _ _ _ = return ()
 
-  mouseClickHeld :: a -> MouseButton -> Double -> (Double, Double) -> IO ()
-  mouseClickHeld _ _ dt (posX, posY) = return ()
+  mouseClickHeld :: a
+                 -> MouseButton
+                 -> Double    -- ^ Time the mouse button has been held
+                 -> V2 Double -- ^ Position of the mouse
+                 -> IO ()
+  mouseClickHeld _ _ _ _ = return ()
 
-  mouseClickDragged :: a -> MouseButton -> Double -> (Double, Double) -> IO ()
-  mouseClickDragged _ _ dt (velX, velY) = return ()
+  mouseClickDragged :: a
+                    -> MouseButton
+                    -> Double    -- ^ Time the mouse button has been held
+                    -> V2 Double -- ^ Velocity of the mouse
+                    -> IO ()
+  mouseClickDragged _ _ _ _ = return ()
 
-  scrolled :: a -> Double -> Double -> IO ()
-  scrolled _ _ _ = return ()
+  scrolled :: a
+           -> V2 Double -- ^ Amount scrolled
+           -> IO ()
+  scrolled _ _ = return ()
 
 -------------------------------------------------------------------------------
 -- This is Vish's view of mouse and keyboard events.

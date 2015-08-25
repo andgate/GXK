@@ -5,6 +5,7 @@ import GXK.Data.Input
 
 import Control.Lens
 import qualified Data.HashTable.IO as H
+import Linear
 
 data Registrable = forall a . InputListener a => MkInputListener a
 
@@ -19,8 +20,8 @@ data Input = Input
   { _inputKeyTable :: KeyTable
   , _inputButtonTable :: ButtonTable
   , _inputListeners :: [Registrable]
-  , _inputMousePos1 :: (Double, Double)
-  , _inputMousePos2 :: (Double, Double)
+  , _inputMousePos1 :: V2 Double
+  , _inputMousePos2 :: V2 Double
   }
 
 makeLenses ''Input
@@ -30,7 +31,7 @@ mkInput = do
   keyTable <- H.new
   buttonTable <- H.new
   let listeners = []
-      mousePos = (0,0)
+      mousePos = zero
   return
     Input
     { _inputKeyTable = keyTable

@@ -1,9 +1,9 @@
 module GXK.Data.AppConfig where
 
-import System.FilePath
 
 import Control.Applicative
 import Data.Yaml
+import System.FilePath
 
 
 data AppConfig = AppConfig

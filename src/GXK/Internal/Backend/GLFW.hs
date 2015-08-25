@@ -20,6 +20,7 @@ import GXK.Data.IORef.Lens
 import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes, fromMaybe)
+import Linear
 import Text.PrettyPrint
 import qualified System.Mem  as System
 
@@ -74,7 +75,10 @@ instance Backend GLFWState where
       ]
 
   runMainLoop                = runMainLoopGLFW
-  getWindowDimensions ref    = whenWindow ref GLFW.getWindowSize
+  getWindowDimensions ref    =
+    whenWindow ref $ \win -> do
+      (winW, winH) <- GLFW.getWindowSize win
+      return $ V2 winW winH
   --getMousePosition ref       = whenWindow ref GLFW.getCursorPos
 
   elapsedTime _              = liftM (fromMaybe 0) GLFW.getTime
@@ -303,8 +307,8 @@ installReshapeCallbackGLFW ref callbacks =
 
 callbackReshape :: Backend a => IORef a -> Callbacks
                 -> GLFW.Window -> Int -> Int -> IO ()
-callbackReshape ref callbacks _ =
-  reshapeCallback callbacks ref
+callbackReshape ref callbacks _ sW sH =
+  reshapeCallback callbacks ref $ V2 sW sH
 
 
 -- Keyboard Callback ----------------------------------------------------------
@@ -334,8 +338,8 @@ installMouseMoveCallbackGLFW ref callbacks =
 
 callbackMouseMove :: IORef GLFWState -> Callbacks -> GLFW.Window
                 -> Double -> Double -> IO ()
-callbackMouseMove ref callbacks _ =
-  mouseMoveCallback callbacks ref
+callbackMouseMove ref callbacks _ pX pY =
+  mouseMoveCallback callbacks ref $ V2 pX pY
 
 
 -- Mouse Button Callback ------------------------------------------------------
@@ -350,7 +354,7 @@ callbackMouseButton :: IORef GLFWState -> Callbacks
 callbackMouseButton ref callbacks _ button state _ =
   whenWindow_ ref $ \glfwWin -> do
   (posX, posY) <- GLFW.getCursorPos glfwWin
-  mouseButtonCallback callbacks ref button' state' posX posY
+  mouseButtonCallback callbacks ref button' state' $ V2 posX posY
   where
     button'   = fromGLFW button
     state' = fromGLFW state
@@ -364,8 +368,8 @@ installScrollCallbackGLFW ref callbacks =
 
 callbackScroll :: IORef GLFWState -> Callbacks -> GLFW.Window
                    -> Double -> Double -> IO ()
-callbackScroll ref callbacks _ =
-  scrollCallback callbacks ref
+callbackScroll ref callbacks _ amountX amountY =
+  scrollCallback callbacks ref $ V2 amountX amountY
 
 
 -- Main Loop ------------------------------------------------------------------

@@ -12,6 +12,7 @@ import qualified GXK.Data.Input as I
 
 import Control.Lens
 import Data.IORef
+import Linear
 
 -- | The functions every backend window managed backend needs to support.
 --
@@ -48,7 +49,7 @@ class Backend a where
         runMainLoop                :: IORef a -> IO ()
 
         -- | Function that returns (width,height) of the window in pixels.
-        getWindowDimensions        :: IORef a -> IO (Maybe (Int,Int))
+        getWindowDimensions        :: IORef a -> IO (Maybe (V2 Int))
 
         -- | Function that reports the time elapsed since the application started.
         --   (in seconds)
@@ -86,19 +87,19 @@ type ResumeCallback      = forall a . Backend a => IORef a -> IO ()
 type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
 
 -- | Arguments: (Width,Height) in pixels.
-type ReshapeCallback       = forall a . Backend a => IORef a -> Int -> Int -> IO ()
+type ReshapeCallback       = forall a . Backend a => IORef a -> V2 Int -> IO ()
 
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed
 type KeyboardCallback = forall a . Backend a => IORef a -> I.Key -> InputState -> IO ()
 
 -- | Arguments: (PosX,PosY) in pixels.
-type MouseMoveCallback        = forall a . Backend a => IORef a -> Double -> Double -> IO ()
+type MouseMoveCallback        = forall a . Backend a => IORef a -> V2 Double -> IO ()
 
 -- | Arguments: Mouse button, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type MouseButtonCallback = forall a . Backend a => IORef a -> I.MouseButton -> InputState -> Double -> Double -> IO ()
+type MouseButtonCallback = forall a . Backend a => IORef a -> I.MouseButton -> InputState -> V2 Double -> IO ()
 
 -- | Arguments: (ScrollX, ScrollY)
-type ScrollCallback = forall a. Backend a => IORef a -> Double -> Double -> IO ()
+type ScrollCallback = forall a. Backend a => IORef a -> V2 Double -> IO ()
 
 data Callbacks = Callbacks
   { displayCallback :: DisplayCallback
@@ -139,16 +140,16 @@ defaultCloseCallback :: CloseCallBack
 defaultCloseCallback _ = return ()
 
 defaultReshapeCallback :: ReshapeCallback
-defaultReshapeCallback _ _ _ = return ()
+defaultReshapeCallback _ _ = return ()
 
 defaultKeyboardCallback :: KeyboardCallback
 defaultKeyboardCallback _ _ _ = return ()
 
 defaultMouseMoveCallback :: MouseMoveCallback
-defaultMouseMoveCallback _ _ _ = return ()
+defaultMouseMoveCallback _ _ = return ()
 
 defaultMouseButtonCallback :: MouseButtonCallback
-defaultMouseButtonCallback _ _ _ _ _ = return ()
+defaultMouseButtonCallback _ _ _ _ = return ()
 
 defaultScrollCallback :: ScrollCallback
-defaultScrollCallback _ _ _ = return ()
+defaultScrollCallback _ _  = return ()

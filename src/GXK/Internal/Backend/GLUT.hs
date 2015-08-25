@@ -11,9 +11,10 @@ import Control.Concurrent
 import Control.Lens
 import Control.Monad
 import Data.Bifunctor
-
 import Data.IORef
 import GXK.Data.IORef.Lens
+import Linear
+
 
 import Graphics.UI.GLUT                    (get,($=))
 import qualified Graphics.UI.GLUT          as GLUT
@@ -62,7 +63,7 @@ instance Backend GLUTState where
 
   getWindowDimensions _ = do
     GL.Size sizeX sizeY <- get GLUT.windowSize
-    return . Just $  (fromEnum sizeX, fromEnum sizeY)
+    return . Just $ fromEnum <$> V2 sizeX sizeY
 
   elapsedTime _ =
     liftM ((/ 1000) . fromIntegral) $ get GLUT.elapsedTime
@@ -210,7 +211,7 @@ installReshapeCallbackGLUT ref callbacks =
 
 callbackReshape :: IORef GLUTState -> Callbacks -> GLUT.Size -> IO ()
 callbackReshape ref callbacks (GLUT.Size sizeX sizeY) =
-  reshapeCallback callbacks ref (fromEnum sizeX) (fromEnum sizeY)
+  reshapeCallback callbacks ref $ fromEnum <$> V2 sizeX sizeY
 
 
 -- Keyboard Callback ----------------------------------------------------------
@@ -242,7 +243,7 @@ installMouseMoveCallbackGLUT ref callbacks = do
 
 callbackMouseMove :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
 callbackMouseMove ref callbacks (GLUT.Position posX posY) =
-  mouseMoveCallback callbacks ref (fromIntegral posX) (fromIntegral posY)
+  mouseMoveCallback callbacks ref $ fromIntegral <$> V2 posX posY
 
 
 -- Mouse Callback ------------------------------------------------------
@@ -254,10 +255,10 @@ callbackMouse :: IORef GLUTState -> Callbacks -> GLUT.MouseButton
                   -> GLUT.KeyState -> GLUT.Position -> IO ()
 callbackMouse ref callbacks button state (GLUT.Position posX posY) =
   case button of
-    GLUT.WheelUp -> scrollCallback callbacks ref 0 1
-    GLUT.WheelDown -> scrollCallback callbacks ref 0 (-1)
+    GLUT.WheelUp -> scrollCallback callbacks ref $ V2 0 1
+    GLUT.WheelDown -> scrollCallback callbacks ref $ V2 0 (-1)
     _ ->
-      mouseButtonCallback callbacks ref button' state' posX' posY'
+      mouseButtonCallback callbacks ref button' state' $ V2 posX' posY'
   where
     button' = fromGLUT button
     state' = fromGLUT state
