@@ -1,0 +1,144 @@
+# This YAML file describes your package. Stack will automatically generate a
+# Cabal file when you run `stack build`. See the hpack website for help with
+# this file: <https://github.com/sol/hpack>.
+
+
+name: gx
+maintainer: Gabriel Anderson
+synopsis: gx game framework
+description: Game framework based on state monads and lens
+github: andgate/gx
+category: Game Framework
+version: '0.1.0'
+license: MIT
+
+flags:
+  glfw:
+    description: Compile with GLFW backend. Otherwise, uses GLUT backend.
+    manual: yes
+    default: no
+
+extra-source-files:
+  - LICENSE.md
+  - package.yaml
+  - README.md
+  - stack.yaml
+
+ghc-options: 
+  - -Wall
+  - -fno-warn-name-shadowing
+  - -fno-warn-unused-binds
+  - -fno-warn-unused-matches
+  - -fno-warn-unused-do-bind
+  - -fno-warn-orphans
+
+
+library:
+  source-dirs: src
+
+  when:
+    - condition: flag(glfw)
+      then:
+        dependencies: GLFW-b
+        cpp-options: -DWITHGLFW
+      else:
+        dependencies: GLUT
+        cpp-options: -DWITHGLUT
+  
+
+  dependencies:
+    - array
+    - base
+    - bytestring
+    - containers
+    - directory
+    - filepath
+    - hashable
+    - hashtables
+    - ListZipper
+    - lens
+    - linear
+    - mtl
+    - OpenGL
+    - safe
+    - text
+    - transformers
+    - unordered-containers
+    - vector
+    - yaml
+
+  exposed-modules:  
+    - Gx.App
+    - Gx.AppConfig    
+    - Gx.Data.App
+    - Gx.Data.Input
+    - Gx.Data.Window
+    - Gx.Input
+    - Gx.Window
+
+    - Gx.Data.IORef.Lens
+
+  other-modules:
+    - Gx.Data.AppConfig
+    - Gx.Internal.App
+    - Gx.Internal.Backend
+    - Gx.Internal.Backend.GLFW
+    - Gx.Internal.Backend.GLUT
+    - Gx.Internal.Backend.Types
+    - Gx.Internal.Data.Input
+    - Gx.Internal.Data.Input
+    - Gx.Internal.Window
+    - Gx.Util
+
+
+tests:
+  spec:
+    source-dirs: test
+    main: Main.hs
+    dependencies:
+      - base
+      - gx
+      - tasty
+      - tasty-hspec
+    ghc-options:
+      - -fhpc
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
+
+#  doctest:
+#    source-dirs: test-suite
+#    main: DocTest.hs
+#    dependencies:
+#      - base
+#      - doctest
+#      - Glob
+#    ghc-options:
+#      - -rtsopts
+#      - -threaded
+#      - -with-rtsopts=-N
+
+  hlint:
+    source-dirs: test
+    main: HLint.hs
+    dependencies:
+      - base
+      - hlint
+    ghc-options:
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
+    
+
+#benchmarks:
+#  criterion:
+#    source-dirs: benchmark
+#    main: Main.hs
+#    dependencies:
+#      - base
+#      - gx
+#      - criterion
+#    ghc-options:
+#      - -rtsopts
+#      - -threaded
+#      - -with-rtsopts=-N

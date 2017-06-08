@@ -1,7 +1,9 @@
-{-# LANGUAGE ExistentialQuantification #-}
-module GXK.Internal.Data.Input where
+{-# LANGUAGE ExistentialQuantification
+           , TemplateHaskell
+  #-}
+module Gx.Internal.Data.Input where
 
-import GXK.Data.Input
+import Gx.Data.Input
 
 import Control.Lens
 import qualified Data.HashTable.IO as H

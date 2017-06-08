@@ -1,14 +1,14 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module GXK.Internal.Input
-  ( module GXK.Internal.Input
-  , module GXK.Internal.Data.Input
+module Gx.Internal.Input
+  ( module Gx.Internal.Input
+  , module Gx.Internal.Data.Input
   )
 where
 
-import GXK.Data.App
-import GXK.Data.Input
-import GXK.Internal.Data.Input
-import qualified GXK.Internal.Backend as B
+import Gx.Data.App
+import Gx.Data.Input
+import Gx.Internal.Data.Input
+import qualified Gx.Internal.Backend as B
 
 import Control.Arrow
 import Control.Lens
@@ -16,7 +16,7 @@ import Control.Monad
 import Data.IORef
 import Data.Hashable
 import qualified Data.HashTable.IO as H
-import GXK.Data.IORef.Lens
+import Gx.Data.IORef.Lens
 import Linear
 
 

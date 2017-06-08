@@ -1,13 +1,15 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-module GXK.Internal.Backend.GLFW
-  (GLFWState)
-where
+{-# LANGUAGE MultiParamTypeClasses
+           , CPP
+  #-}
+module Gx.Internal.Backend.GLFW where
 
-import GXK.Internal.Backend.Types
-import GXK.Data.Input (Key (..), MouseButton (..))
-import qualified GXK.Data.Input as I
-import GXK.Data.Window
+#ifdef WITHGLFW
+
+import Gx.Internal.Backend.Types
+import Gx.Data.Input (Key (..), MouseButton (..))
+import qualified Gx.Data.Input as I
+import Gx.Data.Window
 
 import Control.Concurrent
 import Control.Lens
@@ -16,7 +18,7 @@ import Control.Monad
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.IORef
-import GXK.Data.IORef.Lens
+import Gx.Data.IORef.Lens
 import Data.Char (toLower)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes, fromMaybe)
@@ -569,3 +571,6 @@ joysticks =
   , GLFW.Joystick'15
   , GLFW.Joystick'16
   ]
+
+-- WITHGLFW
+#endif

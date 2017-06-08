@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module GXK.Data.Input
+module Gx.Data.Input
 where
 
 import GHC.Generics (Generic)

@@ -1,4 +1,5 @@
-module GXK.Data.AppConfig where
+{-# LANGUAGE OverloadedStrings #-}
+module Gx.Data.AppConfig where
 
 
 import Control.Applicative

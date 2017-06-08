@@ -1,18 +1,18 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module GXK.Input
-  ( module GXK.Input
-  , module GXK.Data.Input
+module Gx.Input
+  ( module Gx.Input
+  , module Gx.Data.Input
   )
 where
 
-import GXK.Data.App
-import GXK.Data.Input
+import Gx.Data.App
+import Gx.Data.Input
 
-import GXK.Internal.Data.Input
+import Gx.Internal.Data.Input
 
 import Control.Lens
 import Data.IORef
-import GXK.Data.IORef.Lens
+import Gx.Data.IORef.Lens
 
 registerInputListener :: InputListener l => AppRef w -> l -> IO ()
 registerInputListener appRef listener = do

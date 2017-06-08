@@ -1,18 +1,18 @@
-module GXK.Internal.App where
+module Gx.Internal.App where
 
-import           GXK.AppConfig
-import           GXK.Data.App
-import           GXK.Data.Input
-import           GXK.Data.Window
-import           GXK.Internal.Backend
-import           GXK.Internal.Input
-import           GXK.Internal.Window
+import           Gx.AppConfig
+import           Gx.Data.App
+import           Gx.Data.Input
+import           Gx.Data.Window
+import           Gx.Internal.Backend
+import           Gx.Internal.Input
+import           Gx.Internal.Window
 
 import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Data.IORef
-import           GXK.Data.IORef.Lens
+import           Gx.Data.IORef.Lens
 import           Data.Maybe                        (fromMaybe)
 import           Data.Yaml
 import           Linear

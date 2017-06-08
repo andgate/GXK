@@ -1,5 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
-module GXK.Data.IORef.Lens where
+module Gx.Data.IORef.Lens where
 
 import Control.Lens
 import Control.Monad

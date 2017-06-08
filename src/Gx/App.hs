@@ -1,13 +1,13 @@
-module GXK.App where
+module Gx.App where
 
-import GXK.Data.App
-import GXK.Internal.App
-import GXK.Internal.Backend
+import Gx.Data.App
+import Gx.Internal.App
+import Gx.Internal.Backend
 
 import Control.Concurrent
 import Control.Lens
 import Data.IORef
-import GXK.Data.IORef.Lens
+import Gx.Data.IORef.Lens
 
 
 play :: AppListener w => w -> IO ()

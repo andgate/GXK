@@ -1,4 +1,4 @@
-module GXK.Util where
+module Gx.Util where
 
 fromBool :: Bool -> a -> Maybe a
 fromBool True  a = Just a

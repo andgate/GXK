@@ -1,12 +1,12 @@
-module GXK.AppConfig
-  ( module GXK.AppConfig
-  , module GXK.Data.AppConfig
+module Gx.AppConfig
+  ( module Gx.AppConfig
+  , module Gx.Data.AppConfig
   )
 where
 
-import GXK.Data.AppConfig
-import GXK.Data.App
-import GXK.Data.Window
+import Gx.Data.AppConfig
+import Gx.Data.App
+import Gx.Data.Window
 
 import Data.Yaml
 

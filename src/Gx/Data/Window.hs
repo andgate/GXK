@@ -1,4 +1,5 @@
-module GXK.Data.Window where
+{-# LANGUAGE TemplateHaskell #-}
+module Gx.Data.Window where
 
 import Control.Lens
 

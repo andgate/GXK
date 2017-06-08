@@ -1,11 +1,11 @@
-module GXK.Internal.Window where
+module Gx.Internal.Window where
 
-import GXK.Data.App
-import GXK.Internal.Backend.Types
+import Gx.Data.App
+import Gx.Internal.Backend.Types
 
 import Control.Monad
 import Data.IORef
-import GXK.Data.IORef.Lens
+import Gx.Data.IORef.Lens
 
 createWindow :: (Backend b, AppListener w) => AppRef w -> IORef b -> Callbacks -> IO ()
 createWindow appRef backendRef callbacks = do

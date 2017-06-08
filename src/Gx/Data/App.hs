@@ -1,12 +1,14 @@
-{-# LANGUAGE Rank2Types #-}
-module GXK.Data.App where
+{-# LANGUAGE Rank2Types
+           , TemplateHaskell
+  #-}
+module Gx.Data.App where
 
 import Control.Lens
 import Data.IORef
 import Linear
 
-import GXK.Internal.Data.Input (mkInput, Input)
-import GXK.Data.Window
+import Gx.Internal.Data.Input (mkInput, Input)
+import Gx.Data.Window
 
 type AppRef w = IORef (App w)
 

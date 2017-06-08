@@ -1,14 +1,14 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GXK.Internal.Backend.Types
-  ( module GXK.Internal.Backend.Types
-  , module GXK.Data.Window
+module Gx.Internal.Backend.Types
+  ( module Gx.Internal.Backend.Types
+  , module Gx.Data.Window
   )
 where
 
 
-import GXK.Data.Window
-import qualified GXK.Data.Input as I
+import Gx.Data.Window
+import qualified Gx.Data.Input as I
 
 import Control.Lens
 import Data.IORef

@@ -1,18 +1,21 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-module GXK.Internal.Backend.GLUT
-  (GLUTState)
-where
+{-# LANGUAGE MultiParamTypeClasses
+           , CPP
+           , TemplateHaskell
+ #-}
+module Gx.Internal.Backend.GLUT where
 
-import GXK.Internal.Backend.Types
-import GXK.Data.Input (Key (..), MouseButton (..))
-import qualified GXK.Data.Input as I
+#ifdef WITHGLUT
+
+import Gx.Internal.Backend.Types
+import Gx.Data.Input (Key (..), MouseButton (..))
+import qualified Gx.Data.Input as I
 
 import Control.Concurrent
 import Control.Lens
 import Control.Monad
 import Data.Bifunctor
 import Data.IORef
-import GXK.Data.IORef.Lens
+import Gx.Data.IORef.Lens
 import Linear
 
 
@@ -423,3 +426,6 @@ instance GLUTConv GLUT.KeyState InputState where
     case state of
       GLUT.Down       -> Down
       GLUT.Up         -> Up
+
+ -- WITHGLUT
+#endif
