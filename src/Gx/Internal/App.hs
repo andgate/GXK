@@ -18,7 +18,7 @@ import           Data.Yaml
 import           Linear
 import qualified System.Mem                        as System
 
-playWithBackend :: (Backend b, AppListener w) => b -> w -> IO ()
+playWithBackend :: b -> App ()
 playWithBackend backend world = do
   backendRef <- newIORef backend
   appRef <- newIORef =<< mkApp world
@@ -46,8 +46,8 @@ playWithBackend backend world = do
 
   createWindow appRef backendRef callbacks
 
-displayUpdate :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-displayUpdate appRef backendRef = do
+displayUpdate :: Backend b => IORef b -> App ()
+displayUpdate backendRef = do
   updateInput appRef backendRef
   appUpdate appRef
 
@@ -57,31 +57,29 @@ displayUpdate appRef backendRef = do
 
   handleAppStatus appRef backendRef
 
-  System.performGC
 
-handleAppStatus :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-handleAppStatus appRef backendRef = do
+handleAppStatus :: Backend b => IORef b -> App ()
+handleAppStatus backendRef = do
   shouldQuit <- appRef^@appStatus
   case shouldQuit of
     AppPlay -> return ()
     AppQuit -> exitBackend backendRef
 
-resizeWindow :: (AppListener w, Backend b)
-             => AppRef w
-             -> IORef b
+resizeWindow :: Backend b
+             => IORef b
              -> V2 Int   -- ^ New size of the window
-             -> IO ()
-resizeWindow appRef _ wS =
-  appResize appRef wS
+             -> App ()
+resizeWindow _ wS =
+  appResize wS
 
-pauseApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-pauseApplication app _ =
+pauseApplication :: Backend b => IORef b -> App ()
+pauseApplication _ =
   appPause app
 
-resumeApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-resumeApplication app _ =
+resumeApplication :: Backend b => IORef b -> App ()
+resumeApplication _ =
   appResume app
 
-disposeApplication :: (AppListener w, Backend b) => AppRef w -> IORef b -> IO ()
-disposeApplication app _ =
+disposeApplication :: Backend b => IORef b -> App ()
+disposeApplication _ =
   appDispose app

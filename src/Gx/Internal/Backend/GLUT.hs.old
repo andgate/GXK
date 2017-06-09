@@ -1,6 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses
            , CPP
            , TemplateHaskell
+           , TypeSynonymInstances
+           , FlexibleInstances
+           , GeneralizedNewtypeDeriving
  #-}
 module Gx.Internal.Backend.GLUT where
 
@@ -13,8 +16,10 @@ import qualified Gx.Data.Input as I
 import Control.Concurrent
 import Control.Lens
 import Control.Monad
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.State (StateT)
+import Control.Monad.State.Class (MonadState)
 import Data.Bifunctor
-import Data.IORef
 import Linear
 
 
@@ -24,7 +29,9 @@ import qualified Graphics.Rendering.OpenGL as GL
 
 
 -- | We don't maintain any state information for the GLUT backend,
---   so this data type is empty.
+--   so this data type is fairly sparse.
+newtype Glut = StateT GLUTState IO
+
 data GLUTState =
   GLUTState
   { _glutAppStatus :: GLUTAppStatus
@@ -37,19 +44,18 @@ makeLenses ''GLUTState
 initGLUTState :: GLUTState
 initGLUTState  = GLUTState GLUTPlay
 
-instance Backend GLUTState where
-  initBackendState  = initGLUTState
+instance Backend Glut where
   initializeBackend = initGLUT
 
   -- non-freeglut doesn't like this: (\_ -> GLUT.leaveMainLoop)
   --exitBackend _ = System.exitWith System.ExitSuccess
-  exitBackend = glutAppStatus @~ GLUTExit
+  exitBackend = glutAppStatus .= GLUTExit
 
   openWindow = openWindowGLUT
   dumpBackendState = dumpStateGLUT
 
-  installCallbacks ref callbacks =
-    mapM_ (\f -> f ref callbacks)
+  installCallbacks callbacks =
+    mapM_ (\f -> f  callbacks)
       [ installDisplayCallbackGLUT
       , installPauseResumeCallbackGLUT
       , installWindowCloseCallbackGLUT
@@ -61,38 +67,39 @@ instance Backend GLUTState where
 
   -- Call the GLUT mainloop.
   -- This function will return when something calls GLUT.leaveMainLoop
-  runMainLoop _   = GLUT.mainLoop
+  runMainLoop = GLUT.mainLoop
 
-  getWindowDimensions _ = do
+  getWindowDimensions = do
     GL.Size sizeX sizeY <- get GLUT.windowSize
     return . Just $ fromEnum <$> V2 sizeX sizeY
 
-  elapsedTime _ =
+  elapsedTime =
     liftM ((/ 1000) . fromIntegral) $ get GLUT.elapsedTime
 
-  sleep _ =
-    threadDelay . round . (* 1000000)
+  sleep =
+    liftIO . threadDelay . round . (* 1000000)
 
 -- Initialise -----------------------------------------------------------------
-initGLUT :: IORef GLUTState -> Bool -> IO ()
-initGLUT _ debug = do
-  (_progName, _args)  <- GLUT.getArgsAndInitialize
+initGLUT :: Bool -> Glut ()
+initGLUT debug = liftIO $
+  do
+    (_progName, _args)  <- GLUT.getArgsAndInitialize
 
-  glutVersion         <- get GLUT.glutVersion
-  when debug . putStrLn $ "  glutVersion       = " ++ show glutVersion
+    glutVersion         <- get GLUT.glutVersion
+    when debug . putStrLn $ "  glutVersion       = " ++ show glutVersion
 
-  GLUT.initialDisplayMode $= [ GLUT.RGBAMode, GLUT.DoubleBuffered]
+    GLUT.initialDisplayMode $= [ GLUT.RGBAMode, GLUT.DoubleBuffered]
 
-  -- See if our requested display mode is possible
-  displayMode         <- get GLUT.initialDisplayMode
-  displayModePossible <- get GLUT.displayModePossible
-  when debug . putStrLn $  "  displayMode       = " ++ show displayMode ++ "\n"
-                        ++ "  possible          = " ++ show displayModePossible ++ "\n"
+    -- See if our requested display mode is possible
+    displayMode         <- get GLUT.initialDisplayMode
+    displayModePossible <- get GLUT.displayModePossible
+    when debug . putStrLn $  "  displayMode       = " ++ show displayMode ++ "\n"
+                          ++ "  possible          = " ++ show displayModePossible ++ "\n"
 
 
 -- Open Window ----------------------------------------------------------------
-openWindowGLUT :: IORef GLUTState -> Window -> IO ()
-openWindowGLUT _ win = do
+openWindowGLUT :: Window -> Glut ()
+openWindowGLUT win = do
   let (x, y) = bimap fromIntegral fromIntegral $ win^.windowPosition
       (w, h) = bimap fromIntegral fromIntegral $ win^.windowSize
   GLUT.initialWindowSize $= GL.Size w h
@@ -118,11 +125,10 @@ openWindowGLUT _ win = do
 
 -- Dump State -----------------------------------------------------------------
 dumpStateGLUT
-        :: IORef GLUTState
-        -> IO ()
+        :: Glut ()
 
-dumpStateGLUT _
- = do
+dumpStateGLUT = liftIO $
+  do
         wbw             <- get GLUT.windowBorderWidth
         whh             <- get GLUT.windowHeaderHeight
         rgba            <- get GLUT.rgba
@@ -152,13 +158,13 @@ dumpStateGLUT _
                 ++ "               depth = " ++ show depthMask      ++ "\n"
 
 -- Display Callback -----------------------------------------------------------
-installDisplayCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installDisplayCallbackGLUT ref callbacks =
-  GLUT.displayCallback $= callbackDisplay ref callbacks
+installDisplayCallbackGLUT :: Callbacks -> Glut ()
+installDisplayCallbackGLUT callbacks =
+  GLUT.displayCallback $= callbackDisplay callbacks
 
-callbackDisplay :: IORef GLUTState -> Callbacks -> IO ()
-callbackDisplay ref callbacks = do
-  appStatus <- ref ^@ glutAppStatus
+callbackDisplay :: Callbacks -> Glut ()
+callbackDisplay callbacks = do
+  appStatus <- use glutAppStatus
   case appStatus of
     GLUTPause -> return ()
     GLUTExit  -> do
@@ -167,7 +173,7 @@ callbackDisplay ref callbacks = do
       forM_ maybeWin GLUT.destroyWindow
     GLUTPlay  -> do
       -- get the display callbacks from the chain
-      displayCallback callbacks ref
+      displayCallback callbacks 
 
       -- swap front and back buffers
       GLUT.swapBuffers
@@ -179,88 +185,89 @@ callbackDisplay ref callbacks = do
 
 -- App Status Callback -----------------------------------------------------
 -- | Callback for when the app is paused/resumed.
-installPauseResumeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installPauseResumeCallbackGLUT ref callbacks =
-  GLUT.crossingCallback $= Just (callbackVisibility ref callbacks)
+installPauseResumeCallbackGLUT :: Callbacks -> Glut ()
+installPauseResumeCallbackGLUT callbacks =
+  GLUT.crossingCallback $= Just (callbackVisibility callbacks)
 
-callbackVisibility :: IORef GLUTState -> Callbacks -> GLUT.Crossing -> IO ()
-callbackVisibility ref callbacks vis =
+callbackVisibility :: Callbacks -> GLUT.Crossing -> Glut ()
+callbackVisibility callbacks vis =
   case vis of
     GLUT.WindowEntered -> do
-      ref & glutAppStatus @~ GLUTPlay
-      resumeCallback callbacks ref
+      glutAppStatus .= GLUTPlay
+      resumeCallback callbacks
+
     GLUT.WindowLeft -> do
-      ref & glutAppStatus @~ GLUTPause
-      pauseCallback callbacks ref
+      glutAppStatus .= GLUTPause
+      pauseCallback callbacks
 
 
 -- Close Callback -------------------------------------------------------------
 -- | Callback for when the user closes the window.
 --   We can do some cleanup here.
-installWindowCloseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installWindowCloseCallbackGLUT ref callbacks =
-  GLUT.closeCallback $= (Just $ closeCallback callbacks ref)
+installWindowCloseCallbackGLUT :: Callbacks -> Glut ()
+installWindowCloseCallbackGLUT  callbacks =
+  GLUT.closeCallback $= (Just $ closeCallback callbacks)
 
-callbackWindowClose :: IORef GLUTState -> Callbacks -> IO ()
-callbackWindowClose ref callbacks =
-  closeCallback callbacks ref
+callbackWindowClose :: Callbacks -> Glut ()
+callbackWindowClose callbacks =
+  closeCallback callbacks
 
 
 -- Reshape Callback -----------------------------------------------------------
-installReshapeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installReshapeCallbackGLUT ref callbacks =
-  GLUT.reshapeCallback $= Just (callbackReshape ref callbacks)
+installReshapeCallbackGLUT :: Callbacks -> Glut ()
+installReshapeCallbackGLUT callbacks =
+  GLUT.reshapeCallback $= Just (callbackReshape callbacks)
 
-callbackReshape :: IORef GLUTState -> Callbacks -> GLUT.Size -> IO ()
-callbackReshape ref callbacks (GLUT.Size sizeX sizeY) =
-  reshapeCallback callbacks ref $ fromEnum <$> V2 sizeX sizeY
+callbackReshape :: Callbacks -> GLUT.Size -> Glut ()
+callbackReshape callbacks (GLUT.Size sizeX sizeY) =
+  reshapeCallback callbacks $ fromEnum <$> V2 sizeX sizeY
 
 
 -- Keyboard Callback ----------------------------------------------------------
-installKeyboardCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installKeyboardCallbackGLUT ref callbacks = do
-  GLUT.keyboardCallback $= Just (callbackKeyboard ref callbacks Down)
-  GLUT.keyboardUpCallback $= Just (callbackKeyboard ref callbacks Up)
-  GLUT.specialCallback $= Just (callbackSpecialKey ref callbacks Down)
-  GLUT.specialUpCallback $= Just (callbackSpecialKey ref callbacks Up)
+installKeyboardCallbackGLUT :: Callbacks -> Glut ()
+installKeyboardCallbackGLUT callbacks = do
+  GLUT.keyboardCallback $= Just (callbackKeyboard callbacks Down)
+  GLUT.keyboardUpCallback $= Just (callbackKeyboard callbacks Up)
+  GLUT.specialCallback $= Just (callbackSpecialKey callbacks Down)
+  GLUT.specialUpCallback $= Just (callbackSpecialKey callbacks Up)
 
-callbackKeyboard :: IORef GLUTState -> Callbacks -> InputState
-                  -> Char -> GLUT.Position -> IO ()
-callbackKeyboard ref callbacks state c _ =
-  keyboardCallback callbacks ref key state
+callbackKeyboard :: Callbacks -> InputState
+                  -> Char -> GLUT.Position -> Glut ()
+callbackKeyboard callbacks state c _ =
+  keyboardCallback callbacks key state
   where key = fromGLUT c
 
-callbackSpecialKey :: IORef GLUTState -> Callbacks -> InputState
-                  -> GLUT.SpecialKey -> GLUT.Position -> IO ()
-callbackSpecialKey ref callbacks state key _ =
-  keyboardCallback callbacks ref key' state
+callbackSpecialKey :: Callbacks -> InputState
+                  -> GLUT.SpecialKey -> GLUT.Position -> Glut ()
+callbackSpecialKey callbacks state key _ =
+  keyboardCallback callbacks key' state
   where key' = fromGLUT key
 
 
 -- Move Movement Callback ------------------------------------------------------------
-installMouseMoveCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installMouseMoveCallbackGLUT ref callbacks = do
-  GLUT.motionCallback        $= Just (callbackMouseMove ref callbacks)
-  GLUT.passiveMotionCallback $= Just (callbackMouseMove ref callbacks)
+installMouseMoveCallbackGLUT :: Callbacks -> Glut ()
+installMouseMoveCallbackGLUT callbacks = do
+  GLUT.motionCallback        $= Just (callbackMouseMove callbacks)
+  GLUT.passiveMotionCallback $= Just (callbackMouseMove callbacks)
 
-callbackMouseMove :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
-callbackMouseMove ref callbacks (GLUT.Position posX posY) =
-  mouseMoveCallback callbacks ref $ fromIntegral <$> V2 posX posY
+callbackMouseMove :: Callbacks -> GLUT.Position -> Glut ()
+callbackMouseMove callbacks (GLUT.Position posX posY) =
+  mouseMoveCallback callbacks $ fromIntegral <$> V2 posX posY
 
 
 -- Mouse Callback ------------------------------------------------------
-installMouseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installMouseCallbackGLUT ref callbacks =
-  GLUT.mouseCallback $= Just (callbackMouse ref callbacks)
+installMouseCallbackGLUT :: Callbacks -> Glut ()
+installMouseCallbackGLUT callbacks =
+  GLUT.mouseCallback $= Just (callbackMouse callbacks)
 
-callbackMouse :: IORef GLUTState -> Callbacks -> GLUT.MouseButton
-                  -> GLUT.KeyState -> GLUT.Position -> IO ()
-callbackMouse ref callbacks button state (GLUT.Position posX posY) =
+callbackMouse :: Callbacks -> GLUT.MouseButton
+                  -> GLUT.KeyState -> GLUT.Position -> Glut ()
+callbackMouse callbacks button state (GLUT.Position posX posY) =
   case button of
-    GLUT.WheelUp -> scrollCallback callbacks ref $ V2 0 1
-    GLUT.WheelDown -> scrollCallback callbacks ref $ V2 0 (-1)
+    GLUT.WheelUp -> scrollCallback callbacks $ V2 0 1
+    GLUT.WheelDown -> scrollCallback callbacks $ V2 0 (-1)
     _ ->
-      mouseButtonCallback callbacks ref button' state' $ V2 posX' posY'
+      mouseButtonCallback callbacks button' state' $ V2 posX' posY'
   where
     button' = fromGLUT button
     state' = fromGLUT state

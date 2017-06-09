@@ -1,6 +1,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE MultiParamTypeClasses
            , CPP
+           , TemplateHaskell
   #-}
 module Gx.Internal.Backend.GLFW where
 
@@ -34,7 +35,7 @@ data GLFWState
         = GLFWState
         {
         -- | Action that draws on the screen
-        _display       :: IO ()
+          _display       :: IO ()
         -- | Window in use by the backend
         , _glfwWindow    :: Maybe GLFW.Window
         }

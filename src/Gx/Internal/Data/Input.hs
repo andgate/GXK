@@ -1,44 +1,35 @@
-{-# LANGUAGE ExistentialQuantification
-           , TemplateHaskell
+{-# LANGUAGE TemplateHaskell
   #-}
 module Gx.Internal.Data.Input where
 
 import Gx.Data.Input
 
 import Control.Lens
-import qualified Data.HashTable.IO as H
+import Data.Map.Lazy (Map)
 import Linear
 
-data Registrable = forall a . InputListener a => MkInputListener a
+import qualified Data.Map.Lazy as Map
 
-register :: InputListener a => a -> Registrable
-register = MkInputListener
+type InputEventMap k  = Map k InputEvent
+type KeyMap      = InputEventMap Key
+type ButtonMap   = InputEventMap MouseButton
 
-type InputTable k  = H.BasicHashTable k InputState
-type KeyTable      = InputTable Key
-type ButtonTable   = InputTable MouseButton
-
-data Input = Input
-  { _inputKeyTable :: KeyTable
-  , _inputButtonTable :: ButtonTable
-  , _inputListeners :: [Registrable]
+data InputState
+  = InputState
+  { _inputKeyTable :: KeyMap
+  , _inputButtonTable :: ButtonMap
   , _inputMousePos1 :: V2 Double
   , _inputMousePos2 :: V2 Double
   }
 
-makeLenses ''Input
+mkInputState :: InputState
+mkInputState = 
+  InputState
+  { _inputKeyTable = Map.empty
+  , _inputButtonTable = Map.empty
+  , _inputMousePos1 = zero
+  , _inputMousePos2 = zero
+  }
 
-mkInput :: IO Input
-mkInput = do
-  keyTable <- H.new
-  buttonTable <- H.new
-  let listeners = []
-      mousePos = zero
-  return
-    Input
-    { _inputKeyTable = keyTable
-    , _inputButtonTable = buttonTable
-    , _inputListeners = listeners
-    , _inputMousePos1 = mousePos
-    , _inputMousePos2 = mousePos
-    }
+
+makeLenses ''InputState

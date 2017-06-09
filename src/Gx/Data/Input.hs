@@ -1,77 +1,15 @@
-{-# LANGUAGE DeriveGeneric #-}
-module Gx.Data.Input
-where
-
-import GHC.Generics (Generic)
-import Data.Hashable
-import Linear
-
-class InputListener a where
-  keyReleased :: a -> Key -> IO ()
-  keyReleased _ _ = return ()
-
-  keyPressed :: a -> Key -> IO ()
-  keyPressed _ _ = return ()
-
-  keyHeld :: a -> Key -> Double -> IO ()
-  keyHeld _ _ dt = return ()
-
-  keyTyped :: a -> Char -> IO ()
-  keyTyped _ _ = return ()
-
-  mousePositioned :: a          -- ^ Input listener's data
-                  -> V2 Double  -- ^ Current position of the mouse cursor
-                  -> IO ()
-  mousePositioned _ _ = return ()
-
-  mouseMoved :: a          -- ^ Input listener's data
-             -> V2 Double  -- ^ Velocity of the mouse cursor
-             -> IO ()
-  mouseMoved _ _ = return ()
-
-  mouseReleased :: a           -- ^ Input listener's data
-                -> MouseButton -- ^ Mouse button released
-                -> V2 Double   -- ^ Position of mouse cursor when released
-                -> IO ()
-  mouseReleased _ _ _ = return ()
-
-  mouseClicked :: a
-               -> MouseButton
-               -> V2 Double   -- ^ Position of mouse button when clicked
-               -> IO ()
-  mouseClicked _ _ _ = return ()
-
-  mouseClickHeld :: a
-                 -> MouseButton
-                 -> Double    -- ^ Time the mouse button has been held
-                 -> V2 Double -- ^ Position of the mouse
-                 -> IO ()
-  mouseClickHeld _ _ _ _ = return ()
-
-  mouseClickDragged :: a
-                    -> MouseButton
-                    -> Double    -- ^ Time the mouse button has been held
-                    -> V2 Double -- ^ Velocity of the mouse
-                    -> IO ()
-  mouseClickDragged _ _ _ _ = return ()
-
-  scrolled :: a
-           -> V2 Double -- ^ Amount scrolled
-           -> IO ()
-  scrolled _ _ = return ()
+module Gx.Data.Input where
 
 -------------------------------------------------------------------------------
--- This is Vish's view of mouse and keyboard events.
+-- This is Gx's view of mouse and keyboard events.
 -- The actual events provided by the backends are converted to this form
 -- by the backend module.
 
-data InputState =
+data InputEvent =
     Down
   | Up
   | Held Double Double -- Time started, time elapsed
-  deriving (Show, Eq, Ord, Generic)
-
-instance Hashable InputState
+  deriving (Show, Eq, Ord)
 
 data MouseButton =
     Left'Button
@@ -79,9 +17,7 @@ data MouseButton =
   | Right'Button
   | Additional'Button Int
   | Unknown'Button
-  deriving (Show, Eq, Ord, Generic)
-
-instance Hashable MouseButton
+  deriving (Show, Eq, Ord)
 
 data Key =
     Key'Unknown
@@ -252,9 +188,8 @@ data Key =
   | Key'F23
   | Key'F24
   | Key'F25
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Ord)
 
-instance Hashable Key
 
 shiftKey :: Key -> Key
 shiftKey key =

@@ -1,69 +1,105 @@
-{-# LANGUAGE Rank2Types
+{-# LANGUAGE RankNTypes
            , TemplateHaskell
+           , GeneralizedNewtypeDeriving
+           , ExistentialQuantification
+           , DeriveFunctor
   #-}
 module Gx.Data.App where
 
+import Data.Map.Lazy (Map)
 import Control.Lens
-import Data.IORef
+import Control.Monad.State
 import Linear
 
-import Gx.Internal.Data.Input (mkInput, Input)
+import qualified Data.Map.Lazy as Map
+
+import {-# SOURCE #-} Gx.Data.Input.Listener
 import Gx.Data.Window
 
-type AppRef w = IORef (App w)
+import Gx.Internal.Data.Input (mkInputState, InputState)
 
-getApp :: AppListener w => AppRef w -> IO (App w)
-getApp = readIORef
 
-class AppListener w where
-  appCreate :: AppRef w -> IO ()
-  appCreate _ = return ()
+newtype App a = App { unApp :: StateT AppState IO a }
+    deriving (Functor, Applicative, Monad, MonadState AppState, MonadIO)
 
-  appResize :: AppRef w -> V2 Int -> IO ()
-  appResize _ winSize = return ()
+newtype Entity e a = Entity { unEntity :: StateT (EntityState e) App a }
+    deriving (Functor, Applicative, Monad, MonadState (EntityState e), MonadIO)
 
-  appUpdate :: AppRef w -> IO ()
-  appUpdate _ = return ()
+runEntity :: Entity e a -> EntityState e -> App (a, EntityState e)
+runEntity e = runStateT (unEntity e)
 
-  appDraw :: AppRef w -> IO ()
-  appDraw _ = return ()
+evalEntity :: Entity e a -> EntityState e -> App a
+evalEntity e = evalStateT (unEntity e)
 
-  appPostUpdate :: AppRef w -> IO ()
-  appPostUpdate _ = return ()
+execEntity :: Entity e a -> EntityState e -> App (EntityState e)
+execEntity e = execStateT (unEntity e)
 
-  appPause :: AppRef w -> IO ()
-  appPause _ = return ()
+data AppListener =
+  AppListener
+  { _appCreate :: App ()
+  , _appResize :: V2 Int -- | Window size
+              -> App ()
+  , _appUpdate :: App ()
+  , _appDraw :: App ()
+  , _appPostUpdate :: App ()
+  , _appPause :: App ()
+  , _appResume :: App ()
+  , _appDispose :: App ()
+  }
 
-  appResume :: AppRef w -> IO ()
-  appResume _ = return ()
+mkAppListener :: AppListener
+mkAppListener =
+  AppListener
+    { _appCreate = return ()
+    , _appResize = \ _ -> return ()
+    , _appUpdate = return ()
+    , _appDraw = return ()
+    , _appPostUpdate = return ()
+    , _appPause = return ()
+    , _appResume = return ()
+    , _appDispose = return ()
+    }
 
-  appDispose :: AppRef w -> IO ()
-  appDispose _ = return ()
 
-data App w = App
-  { _appInput :: Input
-  , _appWindow :: Window
-  , _appWorld :: w
-  , _appStatus :: AppStatus
+data AppState = AppState
+  { _appWorld     :: Map String EntityState'
+  , _appListener  :: AppListener
+  , _appInput     :: InputState
+  , _appWindow    :: Window
+  , _appStatus    :: AppStatus
   , _appDeltaTime :: Double
   }
 
 data AppStatus = AppPlay | AppQuit
 
-makeLenses ''App
 
-mkApp :: AppListener w => w -> IO (App w)
-mkApp world = do
-  input     <- mkInput
-  let win = windowDefault
-      status = AppPlay
-      deltaTime = 0
-
-  return
-    App
-    { _appInput = input
-    , _appWindow = win
-    , _appWorld = world
-    , _appStatus = status
-    , _appDeltaTime = deltaTime
+mkAppState :: AppState
+mkAppState =
+  AppState
+    { _appWorld = Map.empty
+    , _appListener = mkAppListener
+    , _appInput = mkInputState
+    , _appWindow = windowDefault
+    , _appStatus = AppPlay
+    , _appDeltaTime = 0
     }
+
+data EntityState e =
+  EntityState
+  { _entityName :: String
+  , _entityData :: e
+  , _entityInputListener :: InputListener e
+  }
+
+instance Ord (EntityState e) where
+    compare a b = _entityName a `compare` _entityName b
+
+instance Eq (EntityState e) where
+    (==) a b = _entityName a == _entityName b
+
+
+data EntityState' = forall e. EntityState' (EntityState e)
+
+makeLenses ''AppListener
+makeLenses ''AppState
+makeLenses ''EntityState

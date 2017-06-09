@@ -16,7 +16,7 @@ flags:
   glfw:
     description: Compile with GLFW backend. Otherwise, uses GLUT backend.
     manual: yes
-    default: no
+    default: yes
 
 extra-source-files:
   - LICENSE.md
@@ -60,6 +60,7 @@ library:
     - linear
     - mtl
     - OpenGL
+    - pretty
     - safe
     - text
     - transformers
@@ -72,6 +73,7 @@ library:
     - Gx.AppConfig    
     - Gx.Data.App
     - Gx.Data.Input
+    - Gx.Data.Input.Listener
     - Gx.Data.Window
     - Gx.Input
     - Gx.Window
@@ -87,6 +89,7 @@ library:
     - Gx.Internal.Backend.Types
     - Gx.Internal.Data.Input
     - Gx.Internal.Data.Input
+    - Gx.Internal.Input
     - Gx.Internal.Window
     - Gx.Util
 

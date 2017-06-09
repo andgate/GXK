@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Gx.Internal.Backend.Types
   ( module Gx.Internal.Backend.Types
@@ -10,8 +10,8 @@ where
 import Gx.Data.Window
 import qualified Gx.Data.Input as I
 
-import Control.Lens
-import Data.IORef
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.State.Class (MonadState)
 import Linear
 
 -- | The functions every backend window managed backend needs to support.
@@ -23,47 +23,43 @@ import Linear
 --   When we get a display callback, Vish will perform OpenGL actions, and
 --   the backend needs to have OpenGL in a state where it's able to accept them.
 --
-class Backend a where
-        -- | Initialize the state used by the backend. If you don't use any state,
-        -- make a Unit-like type; see the GLUT backend for an example.
-        initBackendState           :: a
-
+class (MonadIO m) => Backend m where
         -- | Perform any initialization that needs to happen before opening a window
         --   The Boolean flag indicates if any debug information should be printed to
         --   the terminal
-        initializeBackend          :: IORef a -> Bool -> IO ()
+        initializeBackend          :: Bool -> m ()
 
         -- | Perform any deinitialization and close the backend.
-        exitBackend                :: IORef a -> IO ()
+        exitBackend                :: m ()
 
         -- | Open a window with the given display mode.
-        openWindow                 :: IORef a -> Window -> IO ()
+        openWindow                 :: Window -> m ()
 
         -- | Dump information about the backend to the terminal.
-        dumpBackendState           :: IORef a -> IO ()
+        dumpBackendState           :: m ()
 
         -- | Install the display callbacks.
-        installCallbacks           :: IORef a -> Callbacks -> IO ()
+        installCallbacks           :: Callbacks -> m ()
 
         -- | The mainloop of the backend.
-        runMainLoop                :: IORef a -> IO ()
+        runMainLoop                :: m ()
 
         -- | Function that returns (width,height) of the window in pixels.
-        getWindowDimensions        :: IORef a -> IO (Maybe (V2 Int))
+        getWindowDimensions        :: m (Maybe (V2 Int))
 
         -- | Function that reports the time elapsed since the application started.
         --   (in seconds)
-        elapsedTime                :: IORef a -> IO Double
+        elapsedTime                :: m Double
 
         -- | Function that puts the current thread to sleep for 'n' seconds.
-        sleep                      :: IORef a -> Double -> IO ()
+        sleep                      :: Double -> m ()
 
 data InputState = Up | Down
 
 class ConvBackend a b where
   fromBackend :: a -> b
 
-instance ConvBackend InputState I.InputEvent where
+instance ConvBackend InputState I.InputState where
   fromBackend inputState =
     case inputState of
       Up -> I.Up
@@ -75,31 +71,31 @@ instance ConvBackend InputState I.InputEvent where
 -- can thus call the appropriate backend functions.
 
 -- | Display callback has no arguments.
-type DisplayCallback       = forall a . Backend a => IORef a -> IO ()
+type DisplayCallback       = forall m. Backend m => m ()
 
 -- | App pause callback has no arguments.
-type PauseCallback      = forall a . Backend a => IORef a -> IO ()
+type PauseCallback       = forall m. Backend m => m ()
 
 -- | App resume callback has no argument.
-type ResumeCallback      = forall a . Backend a => IORef a -> IO ()
+type ResumeCallback      = forall m. Backend m => m ()
 
 -- | Close callback has no arguments.
-type CloseCallBack         = forall a . Backend a => IORef a -> IO ()
+type CloseCallBack         = forall m. Backend m => m ()
 
 -- | Arguments: (Width,Height) in pixels.
-type ReshapeCallback       = forall a . Backend a => IORef a -> V2 Int -> IO ()
+type ReshapeCallback       = forall m. Backend m => V2 Int -> m ()
 
 -- | Arguments: KeyType, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed
-type KeyboardCallback = forall a . Backend a => IORef a -> I.Key -> InputState -> IO ()
+type KeyboardCallback = forall m. Backend m => I.Key -> InputState -> m ()
 
 -- | Arguments: (PosX,PosY) in pixels.
-type MouseMoveCallback        = forall a . Backend a => IORef a -> V2 Double -> IO ()
+type MouseMoveCallback        = forall m. Backend m => V2 Double -> m ()
 
 -- | Arguments: Mouse button, Key Up \/ Down, Ctrl \/ Alt \/ Shift pressed, latest mouse location.
-type MouseButtonCallback = forall a . Backend a => IORef a -> I.MouseButton -> InputState -> V2 Double -> IO ()
+type MouseButtonCallback = forall m. Backend m => I.MouseButton -> InputState -> V2 Double -> m ()
 
 -- | Arguments: (ScrollX, ScrollY)
-type ScrollCallback = forall a. Backend a => IORef a -> V2 Double -> IO ()
+type ScrollCallback = forall m. Backend m => V2 Double -> m ()
 
 data Callbacks = Callbacks
   { displayCallback :: DisplayCallback
@@ -128,28 +124,28 @@ defaultCallbacks =
   }
 
 defaultDisplayCallback :: DisplayCallback
-defaultDisplayCallback _ = return ()
+defaultDisplayCallback = return ()
 
 defaultPauseCallback :: PauseCallback
-defaultPauseCallback _ = return ()
+defaultPauseCallback = return ()
 
 defaultResumeCallback :: ResumeCallback
-defaultResumeCallback _ = return ()
+defaultResumeCallback = return ()
 
 defaultCloseCallback :: CloseCallBack
-defaultCloseCallback _ = return ()
+defaultCloseCallback = return ()
 
 defaultReshapeCallback :: ReshapeCallback
-defaultReshapeCallback _ _ = return ()
+defaultReshapeCallback _ = return ()
 
 defaultKeyboardCallback :: KeyboardCallback
-defaultKeyboardCallback _ _ _ = return ()
+defaultKeyboardCallback _ _ = return ()
 
 defaultMouseMoveCallback :: MouseMoveCallback
-defaultMouseMoveCallback _ _ = return ()
+defaultMouseMoveCallback _ = return ()
 
 defaultMouseButtonCallback :: MouseButtonCallback
-defaultMouseButtonCallback _ _ _ _ = return ()
+defaultMouseButtonCallback _ _ _ = return ()
 
 defaultScrollCallback :: ScrollCallback
-defaultScrollCallback _ _  = return ()
+defaultScrollCallback _  = return ()

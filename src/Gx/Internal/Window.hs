@@ -3,27 +3,32 @@ module Gx.Internal.Window where
 import Gx.Data.App
 import Gx.Internal.Backend.Types
 
+import Control.Lens
 import Control.Monad
+import Control.Monad.IO.Class
 import Data.IORef
-import Gx.Data.IORef.Lens
 
-createWindow :: (Backend b, AppListener w) => AppRef w -> IORef b -> Callbacks -> IO ()
-createWindow appRef backendRef callbacks = do
+
+createWindow :: Backend b => IORef b -> Callbacks -> App ()
+createWindow backendRef callbacks = do
   let debug = True
-  initializeBackend backendRef debug
-  openWindow backendRef =<< appRef ^@ appWindow
-  installCallbacks backendRef callbacks
+  win <- use appWindow
+  liftIO $ do
+    initializeBackend backendRef debug
+    openWindow backendRef win
+    installCallbacks backendRef callbacks
 
-  -- Dump some debugging info
-  when debug $ do
-    dumpBackendState backendRef
-    -- Not implemented
-    --dumpFramebufferState
-    --dumpFragmentState
+    -- Dump some debugging info
+    when debug $
+      dumpBackendState backendRef
+      -- Not implemented
+      --dumpFramebufferState
+      --dumpFragmentState
 
-  when debug . putStrLn $ "* entering mainloop.."
+    when debug . putStrLn $ "* entering mainloop.."
 
-  appCreate appRef
-  runMainLoop backendRef
+  join $ use $ appListener . appCreate
 
-  when debug . putStrLn $ "* all done"
+  liftIO $ do
+    runMainLoop backendRef
+    when debug . putStrLn $ "* all done"
