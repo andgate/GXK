@@ -16,7 +16,7 @@ flags:
   glfw:
     description: Compile with GLFW backend. Otherwise, uses GLUT backend.
     manual: yes
-    default: yes
+    default: no
 
 extra-source-files:
   - LICENSE.md
@@ -69,42 +69,35 @@ library:
     - yaml
 
   exposed-modules:  
+    - Gx
     - Gx.App
     - Gx.AppConfig    
     - Gx.Data.App
     - Gx.Data.Input
-    - Gx.Data.Input.Listener
     - Gx.Data.Window
-    - Gx.Input
-    - Gx.Window
-
-    - Gx.Data.IORef.Lens
 
   other-modules:
     - Gx.Data.AppConfig
-    - Gx.Internal.App
     - Gx.Internal.Backend
     - Gx.Internal.Backend.GLFW
     - Gx.Internal.Backend.GLUT
     - Gx.Internal.Backend.Types
-    - Gx.Internal.Data.Input
-    - Gx.Internal.Data.Input
     - Gx.Internal.Input
-    - Gx.Internal.Window
-    - Gx.Util
+#    - Gx.Util
 
 
 tests:
-  spec:
+
+
+
+  example:
     source-dirs: test
     main: Main.hs
     dependencies:
       - base
+      - lens
       - gx
-      - tasty
-      - tasty-hspec
     ghc-options:
-      - -fhpc
       - -rtsopts
       - -threaded
       - -with-rtsopts=-N
@@ -121,16 +114,16 @@ tests:
 #      - -threaded
 #      - -with-rtsopts=-N
 
-  hlint:
-    source-dirs: test
-    main: HLint.hs
-    dependencies:
-      - base
-      - hlint
-    ghc-options:
-      - -rtsopts
-      - -threaded
-      - -with-rtsopts=-N
+#  hlint:
+#    source-dirs: test
+#    main: HLint.hs
+#    dependencies:
+#      - base
+#      - hlint
+#    ghc-options:
+#      - -rtsopts
+#      - -threaded
+#      - -with-rtsopts=-N
     
 
 #benchmarks:

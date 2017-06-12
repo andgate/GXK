@@ -13,8 +13,8 @@ data Window = Window
   , _windowState :: WindowState
   }
 
-windowDefault :: Window
-windowDefault =
+defWindow :: Window
+defWindow =
   Window
   { _windowName = "default"
   , _windowPosition = (0, 0)
@@ -22,4 +22,4 @@ windowDefault =
   , _windowState = WindowFloating
   }
 
-makeLenses ''Window
+makeClassy ''Window

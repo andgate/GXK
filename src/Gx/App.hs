@@ -1,26 +1,24 @@
 module Gx.App where
 
+
 import Gx.Data.App
-import Gx.Internal.App
+import Gx.Data.Input
+import Gx.Data.Window
 import Gx.Internal.Backend
 
+import Control.Monad.IO.Class (liftIO)
 import Control.Concurrent
 import Control.Lens
-import Data.IORef
-import Gx.Data.IORef.Lens
 
 
-play :: AppListener w => w -> IO ()
-play = playWithBackend defaultBackendState
+play :: w -> AppLifeCycle w -> InputListener w -> Window -> IO ()
+play world lifecycle input win
+  = playBackend (mkAppState world lifecycle input win)
 
-quitApp :: AppRef a -> IO ()
-quitApp appRef =
-  appRef & appStatus @~ AppQuit
+quitApp :: App w ()
+quitApp =
+  appStatus .= AppQuit
 
-appDelay :: Double -> IO ()
-appDelay s = threadDelay ms
+appDelay :: Double -> App w ()
+appDelay s = liftIO $ threadDelay ms
   where ms = round $ s * 1000000
-
-getDeltaTime :: AppRef a -> IO Double
-getDeltaTime appRef =
-  appRef ^@ appDeltaTime

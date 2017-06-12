@@ -1,19 +1,20 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , CPP
-           , TemplateHaskell
+{-# LANGUAGE CPP
+           , FlexibleInstances
+           , MultiParamTypeClasses
  #-}
 module Gx.Internal.Backend.GLUT where
 
 #ifdef WITHGLUT
 
+import Gx.Data.App
+import Gx.Data.AppConfig
 import Gx.Internal.Backend.Types
+import Gx.Internal.Input
 import Gx.Data.Input (Key (..), MouseButton (..))
 import qualified Gx.Data.Input as I
 
-import Control.Concurrent
 import Control.Lens
 import Control.Monad
-import Data.Bifunctor
 import Data.IORef
 import Linear
 
@@ -23,20 +24,48 @@ import qualified Graphics.UI.GLUT          as GLUT
 import qualified Graphics.Rendering.OpenGL as GL
 
 
--- | We don't maintain any state information for the GLUT backend,
---   so this data type is empty.
-data GLUTState =
+type GLUTRef w = IORef (GLUTState w)
+
+data GLUTState w =
   GLUTState
-  { _glutAppStatus :: GLUTAppStatus
+  { _glutStatus :: GLUTStatus
+  , _glutApp :: AppState w
   }
 
-data GLUTAppStatus = GLUTPlay | GLUTPause | GLUTExit
+data GLUTStatus = GLUTPlay | GLUTPause | GLUTExit
 
-makeLenses ''GLUTState
 
-initGLUTState :: GLUTState
-initGLUTState  = GLUTState GLUTPlay
+class HasGLUTState a w where
+  glutState :: Lens' (a w) (GLUTState w)
 
+  glutStatus :: Lens' (a w) GLUTStatus
+  glutStatus = glutState . go where go f s = (\v -> s{_glutStatus = v}) <$> f (_glutStatus s)
+
+  glutApp :: Lens' (a w) (AppState w)
+  glutApp = glutState . go where go f s = (\v -> s{_glutApp = v}) <$> f (_glutApp s)
+
+instance HasGLUTState GLUTState w where
+  glutState = id
+
+instance HasAppState GLUTState w where
+  appState = glutApp
+
+mkGLUTState :: AppState w -> GLUTState w
+mkGLUTState as =
+  GLUTState
+    { _glutStatus = GLUTPlay
+    , _glutApp = as
+    }
+
+
+inApp :: GLUTRef w -> App w () -> IO ()
+inApp ref action = do
+  glut <- readIORef ref
+  app' <- execApp action (glut^.glutApp)
+  modifyIORef ref (glutApp .~ app')
+
+
+{-
 instance Backend GLUTState where
   initBackendState  = initGLUTState
   initializeBackend = initGLUT
@@ -73,9 +102,24 @@ instance Backend GLUTState where
   sleep _ =
     threadDelay . round . (* 1000000)
 
+-}
+
+playBackend :: AppState w -> IO ()
+playBackend as = do
+    ref <- newIORef $ mkGLUTState as
+    initGLUT False
+    openWindowGLUT ref
+    installCallbacksGLUT ref
+
+    inApp ref $
+      join $ use appCreate
+
+    GLUT.mainLoop
+
+
 -- Initialise -----------------------------------------------------------------
-initGLUT :: IORef GLUTState -> Bool -> IO ()
-initGLUT _ debug = do
+initGLUT ::  Bool -> IO ()
+initGLUT debug = do
   (_progName, _args)  <- GLUT.getArgsAndInitialize
 
   glutVersion         <- get GLUT.glutVersion
@@ -90,9 +134,13 @@ initGLUT _ debug = do
                         ++ "  possible          = " ++ show displayModePossible ++ "\n"
 
 
+
+
 -- Open Window ----------------------------------------------------------------
-openWindowGLUT :: IORef GLUTState -> Window -> IO ()
-openWindowGLUT _ win = do
+openWindowGLUT :: GLUTRef w -> IO ()
+openWindowGLUT ref = do
+  win <- (^.glutApp.appWindow) <$> readIORef ref
+
   let (x, y) = bimap fromIntegral fromIntegral $ win^.windowPosition
       (w, h) = bimap fromIntegral fromIntegral $ win^.windowSize
   GLUT.initialWindowSize $= GL.Size w h
@@ -118,7 +166,7 @@ openWindowGLUT _ win = do
 
 -- Dump State -----------------------------------------------------------------
 dumpStateGLUT
-        :: IORef GLUTState
+        :: GLUTRef e
         -> IO ()
 
 dumpStateGLUT _
@@ -151,121 +199,126 @@ dumpStateGLUT _
                 ++ "  mask         color = " ++ show colorMask      ++ "\n"
                 ++ "               depth = " ++ show depthMask      ++ "\n"
 
--- Display Callback -----------------------------------------------------------
-installDisplayCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installDisplayCallbackGLUT ref callbacks =
-  GLUT.displayCallback $= callbackDisplay ref callbacks
+--------------------------------------------------------------------------------
+-- | Callbacks
 
-callbackDisplay :: IORef GLUTState -> Callbacks -> IO ()
-callbackDisplay ref callbacks = do
-  appStatus <- ref ^@ glutAppStatus
-  case appStatus of
-    GLUTPause -> return ()
+installCallbacksGLUT :: GLUTRef w -> IO ()
+installCallbacksGLUT ref = do
+  GLUT.displayCallback    $= callbackDisplay ref
+  GLUT.crossingCallback   $= Just (callbackVisibility ref)
+  GLUT.closeCallback      $= Just (callbackWindowClose ref)
+  GLUT.reshapeCallback    $= Just (callbackReshape ref)
+
+  -- Keyboard callbacks
+  GLUT.keyboardCallback   $= Just (callbackKeyboard ref Down)
+  GLUT.keyboardUpCallback $= Just (callbackKeyboard ref Up)
+  GLUT.specialCallback    $= Just (callbackSpecialKey ref Down)
+  GLUT.specialUpCallback  $= Just (callbackSpecialKey ref Up)
+
+  -- Mouse callbacks
+  GLUT.motionCallback         $= Just (callbackMouseMove ref)
+  GLUT.passiveMotionCallback  $= Just (callbackMouseMove ref)
+  GLUT.mouseCallback          $= Just (callbackMouse ref)
+
+-- Display callback  -----------------------------------------------------
+-- | Callback called every frame while window is active
+callbackDisplay :: GLUTRef w -> IO ()
+callbackDisplay ref = do
+  glut <- readIORef ref
+
+  case glut ^. glutStatus of
+    GLUTPause ->
+        return ()
     GLUTExit  -> do
-      GLUT.leaveGameMode
-      maybeWin <- get GLUT.currentWindow
-      forM_ maybeWin GLUT.destroyWindow
+        GLUT.leaveGameMode
+        maybeWin <- get GLUT.currentWindow
+        forM_ maybeWin GLUT.destroyWindow
+
     GLUTPlay  -> do
-      -- get the display callbacks from the chain
-      displayCallback callbacks ref
+        inApp ref $ do
+          updateInput
+          join $ use appUpdate
 
-      -- swap front and back buffers
-      GLUT.swapBuffers
 
-      -- Don't report errors by default.
-      -- The windows OpenGL implementation seems to complain for no reason.
-      --  GLUT.reportErrors
-      GLUT.postRedisplay Nothing
+        -- swap front and back buffers
+        GLUT.swapBuffers
 
+        -- Don't report errors by default.
+        -- The windows OpenGL implementation seems to complain for no reason.
+        --  GLUT.reportErrors
+        GLUT.postRedisplay Nothing
+
+        modifyIORef ref $ \gs ->
+          if (gs^.appStatus) == AppQuit
+            then gs & glutStatus.~GLUTExit
+            else gs
+
+    
 -- App Status Callback -----------------------------------------------------
 -- | Callback for when the app is paused/resumed.
-installPauseResumeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installPauseResumeCallbackGLUT ref callbacks =
-  GLUT.crossingCallback $= Just (callbackVisibility ref callbacks)
-
-callbackVisibility :: IORef GLUTState -> Callbacks -> GLUT.Crossing -> IO ()
-callbackVisibility ref callbacks vis =
+callbackVisibility :: GLUTRef w -> GLUT.Crossing -> IO ()
+callbackVisibility ref vis =
   case vis of
     GLUT.WindowEntered -> do
-      ref & glutAppStatus @~ GLUTPlay
-      resumeCallback callbacks ref
+      modifyIORef ref (glutStatus .~ GLUTPlay)
+      inApp ref $ join $ use appResume
+
     GLUT.WindowLeft -> do
-      ref & glutAppStatus @~ GLUTPause
-      pauseCallback callbacks ref
+      modifyIORef ref (glutStatus .~ GLUTPause)
+      inApp ref $ join $ use appPause
 
 
 -- Close Callback -------------------------------------------------------------
 -- | Callback for when the user closes the window.
 --   We can do some cleanup here.
-installWindowCloseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installWindowCloseCallbackGLUT ref callbacks =
-  GLUT.closeCallback $= (Just $ closeCallback callbacks ref)
-
-callbackWindowClose :: IORef GLUTState -> Callbacks -> IO ()
-callbackWindowClose ref callbacks =
-  closeCallback callbacks ref
+callbackWindowClose :: GLUTRef w -> IO ()
+callbackWindowClose ref =
+  inApp ref $ join $ use appDispose
 
 
 -- Reshape Callback -----------------------------------------------------------
-installReshapeCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installReshapeCallbackGLUT ref callbacks =
-  GLUT.reshapeCallback $= Just (callbackReshape ref callbacks)
-
-callbackReshape :: IORef GLUTState -> Callbacks -> GLUT.Size -> IO ()
-callbackReshape ref callbacks (GLUT.Size sizeX sizeY) =
-  reshapeCallback callbacks ref $ fromEnum <$> V2 sizeX sizeY
+callbackReshape :: GLUTRef w -> GLUT.Size -> IO ()
+callbackReshape ref (GLUT.Size sizeX sizeY) =
+  inApp ref $ do
+    resize <- use appResize
+    resize (fromEnum <$> V2 sizeX sizeY)
 
 
 -- Keyboard Callback ----------------------------------------------------------
-installKeyboardCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installKeyboardCallbackGLUT ref callbacks = do
-  GLUT.keyboardCallback $= Just (callbackKeyboard ref callbacks Down)
-  GLUT.keyboardUpCallback $= Just (callbackKeyboard ref callbacks Up)
-  GLUT.specialCallback $= Just (callbackSpecialKey ref callbacks Down)
-  GLUT.specialUpCallback $= Just (callbackSpecialKey ref callbacks Up)
+callbackKeyboard :: GLUTRef w -> InputEvent -> Char -> GLUT.Position -> IO ()
+callbackKeyboard ref ev key _ =
+  inApp ref $ updateKeyboardInput (fromGLUT key) ev
 
-callbackKeyboard :: IORef GLUTState -> Callbacks -> InputState
-                  -> Char -> GLUT.Position -> IO ()
-callbackKeyboard ref callbacks state c _ =
-  keyboardCallback callbacks ref key state
-  where key = fromGLUT c
 
-callbackSpecialKey :: IORef GLUTState -> Callbacks -> InputState
-                  -> GLUT.SpecialKey -> GLUT.Position -> IO ()
-callbackSpecialKey ref callbacks state key _ =
-  keyboardCallback callbacks ref key' state
-  where key' = fromGLUT key
+callbackSpecialKey :: GLUTRef w -> InputEvent -> GLUT.SpecialKey -> GLUT.Position -> IO ()
+callbackSpecialKey ref ev key _ =
+  inApp ref $ updateKeyboardInput (fromGLUT key) ev
 
 
 -- Move Movement Callback ------------------------------------------------------------
-installMouseMoveCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installMouseMoveCallbackGLUT ref callbacks = do
-  GLUT.motionCallback        $= Just (callbackMouseMove ref callbacks)
-  GLUT.passiveMotionCallback $= Just (callbackMouseMove ref callbacks)
-
-callbackMouseMove :: IORef GLUTState -> Callbacks -> GLUT.Position -> IO ()
-callbackMouseMove ref callbacks (GLUT.Position posX posY) =
-  mouseMoveCallback callbacks ref $ fromIntegral <$> V2 posX posY
+callbackMouseMove :: GLUTRef w -> GLUT.Position -> IO ()
+callbackMouseMove ref (GLUT.Position posX posY) =
+  inApp ref $ updateMouseMoveInput (fromIntegral <$> V2 posX posY)
 
 
 -- Mouse Callback ------------------------------------------------------
-installMouseCallbackGLUT :: IORef GLUTState -> Callbacks -> IO ()
-installMouseCallbackGLUT ref callbacks =
-  GLUT.mouseCallback $= Just (callbackMouse ref callbacks)
-
-callbackMouse :: IORef GLUTState -> Callbacks -> GLUT.MouseButton
-                  -> GLUT.KeyState -> GLUT.Position -> IO ()
-callbackMouse ref callbacks button state (GLUT.Position posX posY) =
+callbackMouse :: GLUTRef w -> GLUT.MouseButton -> GLUT.KeyState -> GLUT.Position -> IO ()
+callbackMouse ref button ev (GLUT.Position posX posY) =
   case button of
-    GLUT.WheelUp -> scrollCallback callbacks ref $ V2 0 1
-    GLUT.WheelDown -> scrollCallback callbacks ref $ V2 0 (-1)
+    GLUT.WheelUp ->
+      inApp ref $ updateScrolledInput (V2 0 1)
+    
+    GLUT.WheelDown ->
+      inApp ref $ updateScrolledInput (V2 0 (-1))
+    
     _ ->
-      mouseButtonCallback callbacks ref button' state' $ V2 posX' posY'
+      inApp ref $ updateMouseClickInput button' ev' (V2 posX' posY')
   where
     button' = fromGLUT button
-    state' = fromGLUT state
+    ev' = fromGLUT ev
     posX' = fromIntegral posX
     posY' = fromIntegral posY
+
 
 -- GLUT type Conversion -------------------------------------------------------
 class GLUTConv a b where
@@ -420,7 +473,7 @@ instance GLUTConv GLUT.MouseButton MouseButton where
       _                         -> Unknown'Button
 
 -- | Convert GLUTs key states to our internal ones.
-instance GLUTConv GLUT.KeyState InputState where
+instance GLUTConv GLUT.KeyState InputEvent where
   fromGLUT state =
     case state of
       GLUT.Down       -> Down

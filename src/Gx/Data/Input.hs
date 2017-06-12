@@ -1,9 +1,35 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Gx.Data.Input where
 
--------------------------------------------------------------------------------
--- This is Gx's view of mouse and keyboard events.
--- The actual events provided by the backends are converted to this form
--- by the backend module.
+
+import Control.Lens
+import Data.Map.Lazy (Map)
+import Linear
+
+import qualified Data.Map.Lazy as Map
+
+
+type InputEventMap k  = Map k InputEvent
+type KeyMap      = InputEventMap Key
+type ButtonMap   = InputEventMap MouseButton
+
+data InputState
+  = InputState
+  { _inputKeyTable :: KeyMap
+  , _inputButtonTable :: ButtonMap
+  , _inputMousePos1 :: V2 Double
+  , _inputMousePos2 :: V2 Double
+  }
+
+mkInputState :: InputState
+mkInputState = 
+  InputState
+  { _inputKeyTable = Map.empty
+  , _inputButtonTable = Map.empty
+  , _inputMousePos1 = zero
+  , _inputMousePos2 = zero
+  }
+
 
 data InputEvent =
     Down
@@ -11,6 +37,7 @@ data InputEvent =
   | Held Double Double -- Time started, time elapsed
   deriving (Show, Eq, Ord)
 
+{-# ANN module "HLint: ignore Use camelCase" #-}
 data MouseButton =
     Left'Button
   | Middle'Button
@@ -19,6 +46,7 @@ data MouseButton =
   | Unknown'Button
   deriving (Show, Eq, Ord)
 
+{-# ANN module "HLint: ignore Use camelCase" #-}
 data Key =
     Key'Unknown
   | Key'GraveAccent
@@ -242,3 +270,6 @@ shiftKey key =
     Key'Period -> Key'GreaterThan
     Key'Slash -> Key'Question
     _ -> key -- cannot be shifted
+
+
+makeClassy ''InputState
